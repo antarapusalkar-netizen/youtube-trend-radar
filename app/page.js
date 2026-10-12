@@ -10,6 +10,7 @@ import { notEnoughDataText } from "@/lib/ownstats.js";
 import { scoreExplanation } from "@/lib/text.js";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 // All times are shown in India time.
 const formatTime = (d) => new Date(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
