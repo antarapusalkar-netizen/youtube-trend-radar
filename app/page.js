@@ -3,9 +3,11 @@ import Link from "next/link";
 import SettingsForm from "./SettingsForm";
 import GenerateButton from "./GenerateButton";
 import { getSettings, getBrief, getLatestBrief, listBriefs, getConnectionInfo } from "@/lib/db.js";
-import { REGIONS, MIN_CATEGORIES, MAX_CATEGORIES, DEFAULT_CATEGORIES, DEFAULT_REGION } from "@/lib/config.js";
+import { WEIGHTS, REGIONS, MIN_CATEGORIES, MAX_CATEGORIES, DEFAULT_CATEGORIES, DEFAULT_REGION } from "@/lib/config.js";
 import { friendlyMessage } from "@/lib/errors.js";
 import { triggerLabel, emailStatusText } from "@/lib/text.js";
+import { notEnoughDataText } from "@/lib/ownstats.js";
+import { scoreExplanation } from "@/lib/text.js";
 
 export const dynamic = "force-dynamic";
 
@@ -163,6 +165,8 @@ export default async function Page({ searchParams }) {
           ))}
         </section>
 
+        {clusters.length > 0 && <p className="note">{scoreExplanation(WEIGHTS)}</p>}
+
         {/* 3. India opportunity */}
         <section>
           <h2 className="section">India Opportunity</h2>
@@ -200,7 +204,7 @@ export default async function Page({ searchParams }) {
           {(!own || own.status === "not_connected") && (
             <p className="empty">Your channel is not connected. Use the Connect YouTube Channel button at the top, then generate a new brief.</p>
           )}
-          {own && own.status === "not_enough_data" && <p className="empty">Not enough data yet (fewer than 3 videos had views in the last 7 days).</p>}
+          {own && own.status === "not_enough_data" && <p className="empty">{notEnoughDataText(own.usableVideos)}</p>}
           {own && own.status === "error" && <div className="error">{own.message}</div>}
           {own && own.status === "ok" && (
             <div className="card">
@@ -251,14 +255,21 @@ export default async function Page({ searchParams }) {
                   <h3>{c.trendName}</h3>
                   <span className={`label ${c.label.toLowerCase()}`}>{c.label}</span>
                 </div>
-                <p className="note">Related videos per week, oldest to newest (last 12 weeks before this brief):</p>
+                <p className="note">Related videos per week, from 12 wks ago to last week:</p>
                 <div className="weeks">
-                  {c.weeklyCounts.map((n, i) => (
-                    <div key={i} className="week">
-                      <div className="bar" style={{ height: `${(n / biggest) * 40}px` }} />
-                      <span>{n}</span>
-                    </div>
-                  ))}
+                  {c.weeklyCounts.map((n, i) => {
+                    const weeksAgo = c.weeklyCounts.length - i;
+                    return (
+                      <div key={i} className="week" title={`${weeksAgo} ${weeksAgo === 1 ? "week" : "weeks"} ago: ${n}`}>
+                        <div className="bar" style={{ height: `${(n / biggest) * 40}px` }} />
+                        <span>{n}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="week-axis">
+                  <span>{c.weeklyCounts.length} wks ago</span>
+                  <span>last week</span>
                 </div>
               </div>
             );
