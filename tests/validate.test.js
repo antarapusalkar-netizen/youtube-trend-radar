@@ -45,6 +45,11 @@ test("the prompt requires specific clusters with good and bad examples", () => {
   assert.match(CLUSTER_PROMPT, /Bad: "AI content"/);
 });
 
+test("the prompt requires clusters to be clearly different from each other", () => {
+  assert.match(CLUSTER_PROMPT, /Clusters must be clearly different from each other/);
+  assert.match(CLUSTER_PROMPT, /Do not split one topic into several overlapping clusters/);
+});
+
 test("the prompt asks for up to 5 clusters", () => {
   assert.match(CLUSTER_PROMPT, /up to 5 trend clusters \(never fewer than 3\)/);
 });
