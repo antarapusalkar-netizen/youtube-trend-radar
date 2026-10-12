@@ -10,3 +10,17 @@ test("replaceIds swaps ids for short titles", () => {
 test("replaceIds leaves text alone when there are no ids", () => {
   assert.equal(replaceIds("No ids here.", {}), "No ids here.");
 });
+
+import { triggerLabel, emailStatusText } from "../lib/text.js";
+
+test("triggerLabel: cron is shown as 'Scheduled run'", () => {
+  assert.equal(triggerLabel("cron"), "Scheduled run");
+  assert.equal(triggerLabel("manual"), "Generate Now");
+});
+
+test("emailStatusText: Sent / Failed: reason / Not attempted", () => {
+  assert.equal(emailStatusText("sent", null), "Sent");
+  assert.equal(emailStatusText("failed", "Mailbox full"), "Failed: Mailbox full");
+  assert.equal(emailStatusText(null, null), "Not attempted");
+  assert.equal(emailStatusText(undefined, undefined), "Not attempted");
+});

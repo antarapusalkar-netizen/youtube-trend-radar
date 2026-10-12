@@ -26,7 +26,7 @@ test("toNumberOrNull handles hidden values", () => {
   assert.equal(toNumberOrNull("12"), 12);
 });
 
-test("cleanVideos removes duplicates and Shorts, flags India videos", () => {
+test("cleanVideos removes duplicates and Shorts; isIndia only when channel country is IN", () => {
   const now = new Date("2026-01-02T00:00:00Z").getTime();
   const base = { publishedAt: "2026-01-01T00:00:00Z", views: 240, durationSeconds: 300 };
   const out = cleanVideos(
@@ -34,13 +34,14 @@ test("cleanVideos removes duplicates and Shorts, flags India videos", () => {
       { ...base, id: "a", source: "global", channelCountry: null },
       { ...base, id: "a", source: "global", channelCountry: null },
       { ...base, id: "b", source: "global", channelCountry: "IN" },
-      { ...base, id: "c", source: "region", channelCountry: null },
+      { ...base, id: "c", source: "region", channelCountry: null }, // region search is NOT proof of India
+      { ...base, id: "e", source: "region", channelCountry: "US" },
       { ...base, id: "d", source: "global", channelCountry: "US", durationSeconds: 30 },
     ],
     now
   );
-  assert.deepEqual(out.map((v) => v.id), ["a", "b", "c"]);
-  assert.deepEqual(out.map((v) => v.isIndia), [false, true, true]);
+  assert.deepEqual(out.map((v) => v.id), ["a", "b", "c", "e"]);
+  assert.deepEqual(out.map((v) => v.isIndia), [false, true, false, false]);
 });
 
 test("topByViewsPerHour keeps the fastest videos", () => {

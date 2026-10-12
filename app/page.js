@@ -5,6 +5,7 @@ import GenerateButton from "./GenerateButton";
 import { getSettings, getBrief, getLatestBrief, listBriefs, getConnectionInfo } from "@/lib/db.js";
 import { REGIONS, MIN_CATEGORIES, MAX_CATEGORIES, DEFAULT_CATEGORIES, DEFAULT_REGION } from "@/lib/config.js";
 import { friendlyMessage } from "@/lib/errors.js";
+import { triggerLabel, emailStatusText } from "@/lib/text.js";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,13 @@ export const dynamic = "force-dynamic";
 const formatTime = (d) => new Date(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
 const num = (n) => Number(n).toLocaleString("en-US");
 const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
+// Pie slices: India, other countries, unknown.
+const pieGradient = (m) => {
+  const total = m.indiaCount + m.otherCount + m.unknownCount || 1;
+  const a = (m.indiaCount / total) * 100;
+  const b = a + (m.otherCount / total) * 100;
+  return `conic-gradient(#4f46e5 0 ${a}%, #f59e0b ${a}% ${b}%, #9ca3af ${b}% 100%)`;
+};
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 
 export default async function Page({ searchParams }) {
@@ -94,10 +102,11 @@ export default async function Page({ searchParams }) {
           </p>
         )}
         {shown && shown.status === "failed" && <div className="error">This run failed: {shown.error}</div>}
-        {shown && shown.email_status === "failed" && <div className="error">Email was not sent: {shown.email_error}</div>}
         {shown && shown.status === "ok" && (
           <p className="meta">
             Brief from {formatTime(shown.created_at)} · last {shown.window_days} days · region {shown.region}
+            {" · "}
+            <span className={shown.email_status === "failed" ? "bad" : ""}>Email: {emailStatusText(shown.email_status, shown.email_error)}</span>
           </p>
         )}
 
@@ -157,26 +166,30 @@ export default async function Page({ searchParams }) {
         {/* 3. India opportunity */}
         <section>
           <h2 className="section">India Opportunity</h2>
-          <p className="note">India creators are an approximation: a video counts as India if it came from the region search or its channel country is IN. Channels with no country are not counted.</p>
+          <p className="note">India is decided only from each video’s YouTube channel country field (country = IN). Channels with no country set are counted as unknown, not as India. The search region is never used. This is an approximation.</p>
           {indiaSorted.length === 0 && <p className="empty">Shows up once a brief exists.</p>}
           {indiaSorted.map((c) => (
             <div className="card india" key={c.rank}>
               <div className="big">{pct(c.measures.indiaOpportunity)}<span>opportunity</span></div>
               <div className="grow">
                 <h3>{c.trendName}</h3>
-                <p className="note">Global videos: {c.measures.globalCount} · India videos: {c.measures.indiaCount}</p>
+                {c.measures.unknownCount === undefined ? (
+                  <p className="note">Older brief: India counts were made with a different rule and are not shown.</p>
+                ) : (
+                  <p className="note">
+                    India: {c.measures.indiaCount} · Other countries: {c.measures.otherCount} · Country unknown: {c.measures.unknownCount}
+                  </p>
+                )}
                 <p>{c.opportunityForIshaan}</p>
               </div>
-              <div className="pie-box">
-                <div
-                  className="pie"
-                  style={{ background: `conic-gradient(#4f46e5 0 ${(c.measures.indiaCount / (c.measures.indiaCount + c.measures.globalCount)) * 100}%, #f59e0b 0)` }}
-                  role="img"
-                  aria-label={`${c.measures.indiaCount} India videos, ${c.measures.globalCount} global videos`}
-                />
-                <p className="legend"><i style={{ background: "#4f46e5" }} />India {c.measures.indiaCount}</p>
-                <p className="legend"><i style={{ background: "#f59e0b" }} />Global {c.measures.globalCount}</p>
-              </div>
+              {c.measures.unknownCount !== undefined && (
+                <div className="pie-box">
+                  <div className="pie" style={{ background: pieGradient(c.measures) }} role="img" aria-label={`${c.measures.indiaCount} India, ${c.measures.otherCount} other countries, ${c.measures.unknownCount} unknown`} />
+                  <p className="legend"><i style={{ background: "#4f46e5" }} />India {c.measures.indiaCount}</p>
+                  <p className="legend"><i style={{ background: "#f59e0b" }} />Other {c.measures.otherCount}</p>
+                  <p className="legend"><i style={{ background: "#9ca3af" }} />Unknown {c.measures.unknownCount}</p>
+                </div>
+              )}
             </div>
           ))}
         </section>
@@ -260,7 +273,7 @@ export default async function Page({ searchParams }) {
             {past.map((b) => (
               <li key={b.id}>
                 <Link href={`/?brief=${b.id}`}>{formatTime(b.created_at)}</Link>
-                <span className="note"> · {b.trigger === "cron" ? "Sunday run" : "Generate Now"} · </span>
+                <span className="note"> · {triggerLabel(b.trigger)} · </span>
                 <span className={b.status === "ok" ? "ok" : "bad"}>{b.status}</span>
               </li>
             ))}

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { clusterMeasures, scale, rankClusters } from "../lib/ranking.js";
 
-const vid = (o) => ({ channelId: "c1", views: 100, viewsPerHour: 10, likes: 5, comments: 5, isIndia: false, ...o });
+const vid = (o) => ({ channelId: "c1", views: 100, viewsPerHour: 10, likes: 5, comments: 5, channelCountry: "US", isIndia: false, ...o });
 
 test("scale maps to 0-1 and handles equal values", () => {
   assert.deepEqual(scale([10, 20, 30]), [0, 0.5, 1]);
@@ -17,17 +17,29 @@ test("clusterMeasures: engagement ignores hidden values", () => {
   assert.equal(m.engagement, 0.2); // 20 / 100
 });
 
-test("clusterMeasures: breadth, India opportunity and counts", () => {
+test("clusterMeasures: India, other and unknown counts use channel country only", () => {
   const m = clusterMeasures([
-    vid({ channelId: "a", isIndia: true }),
-    vid({ channelId: "b" }),
-    vid({ channelId: "b" }),
-    vid({ channelId: "c" }),
+    vid({ channelId: "a", channelCountry: "IN" }),
+    vid({ channelId: "b", channelCountry: "US" }),
+    vid({ channelId: "b", channelCountry: "GB" }),
+    vid({ channelId: "c", channelCountry: null }),
   ]);
   assert.equal(m.breadth, 3);
-  assert.equal(m.indiaOpportunity, 0.75);
   assert.equal(m.indiaCount, 1);
-  assert.equal(m.globalCount, 3);
+  assert.equal(m.otherCount, 2);
+  assert.equal(m.unknownCount, 1); // one video without a country
+  assert.equal(m.indiaCount + m.otherCount + m.unknownCount, 4);
+});
+
+test("India opportunity = 1 - India videos / total videos", () => {
+  const m = clusterMeasures([
+    vid({ channelCountry: "IN" }),
+    vid({ channelCountry: "IN" }),
+    vid({ channelCountry: null }),
+    vid({ channelCountry: "US" }),
+  ]);
+  assert.equal(m.indiaOpportunity, 0.5);
+  assert.equal(clusterMeasures([vid({ channelCountry: null })]).indiaOpportunity, 1); // unknown is not India
 });
 
 test("rankClusters orders by score, drops null recurrence", () => {
