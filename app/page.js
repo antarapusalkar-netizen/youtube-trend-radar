@@ -1,7 +1,8 @@
-// The one dashboard page. Everything is on a single scroll.
+// The one dashboard page. A top bar plus tabs (the tabs switch in the browser, nothing is re-fetched).
 import Link from "next/link";
 import SettingsForm from "./SettingsForm";
 import GenerateButton from "./GenerateButton";
+import Tabs from "./Tabs";
 import { getSettings, getBrief, getLatestBrief, listBriefs, getConnectionInfo } from "@/lib/db.js";
 import { weekPieSlices } from "@/lib/history.js";
 import { WEIGHTS, REGIONS, MIN_CATEGORIES, MAX_CATEGORIES, DEFAULT_CATEGORIES, DEFAULT_REGION } from "@/lib/config.js";
@@ -53,70 +54,11 @@ export default async function Page({ searchParams }) {
   const returning = clusters.filter((c) => c.label === "Recurring" || c.label === "Returning");
   const own = shown && shown.status === "ok" ? shown.own_channel : null;
   const viewingOld = Boolean(briefParam);
+  // After coming back from Google sign-in, open the Settings tab so the message is seen.
+  const initialTab = connected || connectError ? "settings" : "trends";
 
-  return (
+  const trendsPanel = (
     <>
-      <header className="top">
-        <div className="wrap">
-          <h1>YouTube Trend Radar</h1>
-          <p>Weekly content strategy brief for Ishaan</p>
-        </div>
-      </header>
-      <main className="wrap">
-        {loadError && <div className="error">{loadError}</div>}
-
-        {/* 1. Settings + Generate Now */}
-        <section className="card">
-          <div className="split">
-            <div>
-              <h2>Settings</h2>
-              <SettingsForm
-                initialCategories={settings.categories}
-                initialRegion={settings.region}
-                regions={REGIONS}
-                min={MIN_CATEGORIES}
-                max={MAX_CATEGORIES}
-              />
-            </div>
-            <div className="actions">
-              <h2>Generate</h2>
-              <p className="note">Save your settings first, then generate a fresh brief from live YouTube data.</p>
-              <GenerateButton />
-              <h2 className="gap">Your channel</h2>
-              {connected && <p className="note">Connected. Your next brief will include your channel.</p>}
-              {connectError && <div className="error">{connectError}</div>}
-              <p className="note">
-                {connection ? `Connected: ${connection.channel_title}` : "Not connected. Read-only access to your channel and analytics."}
-              </p>
-              <a className="button secondary" href="/api/auth/google">
-                {connection ? "Reconnect YouTube Channel" : "Connect YouTube Channel"}
-              </a>
-            </div>
-          </div>
-        </section>
-
-        {/* Latest run failed: show the error above the last good brief */}
-        {!viewingOld && latest && latest.status === "failed" && (
-          <div className="error">
-            The latest run ({formatTime(latest.created_at)}) failed: {latest.error}
-            {shown && " Showing the last successful brief below."}
-          </div>
-        )}
-        {viewingOld && (
-          <p className="note">
-            Viewing an older brief. <Link href="/">Back to latest</Link>
-          </p>
-        )}
-        {shown && shown.status === "failed" && <div className="error">This run failed: {shown.error}</div>}
-        {shown && shown.status === "ok" && (
-          <p className="meta">
-            Brief from {formatTime(shown.created_at)} · last {shown.window_days} days · region {shown.region}
-            {" · "}
-            <span className={shown.email_status === "failed" ? "bad" : ""}>Email: {emailStatusText(shown.email_status, shown.email_error)}</span>
-          </p>
-        )}
-
-        {/* 2. Top trend clusters */}
         <section>
           <h2 className="section">Top Trend Clusters</h2>
           {clusters.length === 0 && <p className="empty">No brief yet. Press Generate Now to create the first one.</p>}
@@ -170,8 +112,11 @@ export default async function Page({ searchParams }) {
         </section>
 
         {clusters.length > 0 && <p className="note">{scoreExplanation(WEIGHTS)}</p>}
+    </>
+  );
 
-        {/* 3. India opportunity */}
+  const indiaPanel = (
+    <>
         <section>
           <h2 className="section">India Opportunity</h2>
           <p className="note">India is decided only from each video’s YouTube channel country field (country = IN). Channels with no country set are counted as unknown, not as India. The search region is never used. This is an approximation.</p>
@@ -202,7 +147,11 @@ export default async function Page({ searchParams }) {
           ))}
         </section>
 
-        {/* 4. Your last 7 days */}
+    </>
+  );
+
+  const last7Panel = (
+    <>
         <section>
           <h2 className="section">Your Last 7 Days</h2>
           {(!own || own.status === "not_connected") && (
@@ -247,7 +196,11 @@ export default async function Page({ searchParams }) {
           )}
         </section>
 
-        {/* 5. Recurring / Returning topics */}
+    </>
+  );
+
+  const recurPanel = (
+    <>
         <section>
           <h2 className="section">Recurring / Returning Topics</h2>
           {returning.length === 0 && <p className="empty">No recurring or returning topics in this brief.</p>}
@@ -288,7 +241,11 @@ export default async function Page({ searchParams }) {
           })}
         </section>
 
-        {/* 6. Previous briefs */}
+    </>
+  );
+
+  const pastPanel = (
+    <>
         <section>
           <h2 className="section">Previous Briefs</h2>
           {past.length === 0 && <p className="empty">No briefs yet.</p>}
@@ -303,7 +260,91 @@ export default async function Page({ searchParams }) {
           </ul>
           {viewingOld && <Link href="/">Back to latest</Link>}
         </section>
-      </main>
     </>
   );
+
+  const settingsPanel = (
+    <>
+        <section>
+          <h2 className="section">Settings</h2>
+          <div className="card">
+            <SettingsForm
+              initialCategories={settings.categories}
+              initialRegion={settings.region}
+              regions={REGIONS}
+              min={MIN_CATEGORIES}
+              max={MAX_CATEGORIES}
+            />
+            <hr />
+            <p className="note">Save your settings first, then press Generate Now (top right) to make a fresh brief from live YouTube data.</p>
+          </div>
+          <h2 className="section">Your channel</h2>
+          <div className="card">
+            {connected && <p className="note">Connected. Your next brief will include your channel.</p>}
+            {connectError && <div className="error">{connectError}</div>}
+            <p className="note">
+              {connection ? `Connected: ${connection.channel_title}` : "Not connected. Read-only access to your channel and analytics."}
+            </p>
+            <a className="button secondary" href="/api/auth/google">
+              {connection ? "Reconnect YouTube Channel" : "Connect YouTube Channel"}
+            </a>
+          </div>
+        </section>
+    </>
+  );
+
+  // Top bar: always visible.
+  const header = (
+    <header className="top">
+      <div className="wrap topbar">
+        <div className="topinfo">
+          <h1>YouTube Trend Radar</h1>
+          <p className="subtitle">Weekly content strategy brief for Ishaan</p>
+          <p className="meta-line">
+            {shown && shown.status === "ok" ? (
+              <>
+                Brief from {formatTime(shown.created_at)} · last {shown.window_days} days · region {shown.region}
+                {" · "}
+                <span className={shown.email_status === "failed" ? "bad" : ""}>Email: {emailStatusText(shown.email_status, shown.email_error)}</span>
+              </>
+            ) : (
+              "No brief yet"
+            )}
+          </p>
+        </div>
+        <GenerateButton />
+      </div>
+    </header>
+  );
+
+  // Messages that stay visible above whichever tab is open.
+  const banners = (
+    <>
+      {loadError && <div className="error">{loadError}</div>}
+      {!viewingOld && latest && latest.status === "failed" && (
+        <div className="error">
+          The latest run ({formatTime(latest.created_at)}) failed: {latest.error}
+          {shown && " Showing the last successful brief below."}
+        </div>
+      )}
+      {viewingOld && (
+        <p className="note oldnote">
+          Viewing an older brief. <Link href="/">Back to latest</Link>
+        </p>
+      )}
+      {shown && shown.status === "failed" && <div className="error">This run failed: {shown.error}</div>}
+    </>
+  );
+
+  const tabs = [
+    { id: "trends", label: "Trends", content: trendsPanel },
+    { id: "india", label: "India Opportunity", content: indiaPanel },
+    { id: "last7", label: "Your Last 7 Days", content: last7Panel },
+    { id: "recurring", label: "Recurring / Returning", content: recurPanel },
+    { id: "past", label: "Past Briefs", content: pastPanel },
+    { id: "settings", label: "Settings", content: settingsPanel },
+  ];
+
+  // key: opening another brief (or going back to latest) starts again on the Trends tab.
+  return <Tabs key={briefParam || "latest"} header={header} banners={banners} tabs={tabs} initial={initialTab} />;
 }

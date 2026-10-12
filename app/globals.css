@@ -111,3 +111,31 @@ summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.
 .wtrack { flex: 1; height: 10px; background: #f0f2f5; border-radius: 5px; overflow: hidden; }
 .wfill { display: block; height: 100%; border-radius: 5px; }
 .wn { width: 18px; text-align: right; font-weight: 600; }
+
+/* ---- Top bar + tabs ---- */
+[hidden] { display: none !important; }
+.sticky-top { position: sticky; top: 0; z-index: 20; }
+.top { padding: 12px 0; margin-bottom: 0; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; flex-wrap: wrap; }
+.top h1 { font-size: 1.25rem; }
+.top .subtitle { margin: 0; font-size: 0.8rem; color: #9ca3af; }
+.top .meta-line { margin: 4px 0 0; font-size: 0.82rem; color: #cbd5e1; }
+.top .bad { color: #fca5a5; }
+.top .note { color: #cbd5e1; }
+.top .row { margin: 0; }
+.top button.big { padding: 10px 20px; font-size: 0.95rem; }
+
+.tabbar { background: #fff; border-bottom: 1px solid var(--line); }
+.tablist { display: flex; gap: 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+button.tab { flex: none; white-space: nowrap; background: transparent; color: var(--muted); border-radius: 0; padding: 13px 14px; font-weight: 600; border-bottom: 3px solid transparent; }
+button.tab:hover { color: var(--text); background: #f6f7f9; }
+button.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-soft); }
+button.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+
+.panel > section > h2.section:first-child { margin-top: 24px; }
+.oldnote { margin: 16px 0 0; }
+
+@media (max-width: 720px) {
+  .top .subtitle { display: none; }
+  .top .meta-line { font-size: 0.75rem; }
+}
