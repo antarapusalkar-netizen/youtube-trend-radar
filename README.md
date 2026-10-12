@@ -4,7 +4,7 @@ A weekly content strategy brief for Ishaan, a tech YouTube creator. It reads liv
 asks OpenAI to group videos into 3-5 trend clusters, ranks them in code, saves the brief in Neon, shows it on one
 dashboard page and emails it with Resend.
 
-**Status: Layer 1 (core).** Layer 2 (90-day history) and Layer 3 (own channel analytics) come next.
+**Status: Layers 1 and 2 (core + 90-day history).** Layer 3 (own channel analytics) comes next.
 
 ## Files (one line each)
 
@@ -21,6 +21,7 @@ dashboard page and emails it with Resend.
 | `lib/youtube.js` | YouTube Data API calls (search, videos, channels) |
 | `lib/process.js` | Pure functions: duration, Shorts removal, views per hour, India flag |
 | `lib/ranking.js` | Pure functions: cluster numbers, 0-1 scaling, weighted score |
+| `lib/history.js` | Pure functions: weekly counts and the New / Returning / Recurring / Growing label |
 | `lib/validate.js` | Pure function: checks the OpenAI answer |
 | `lib/openai.js` | The prompt and the OpenAI call (with one retry) |
 | `lib/db.js` | Neon: creates tables, saves settings and briefs |
@@ -68,5 +69,13 @@ curl -i -H "Authorization: Bearer YOUR_CRON_SECRET" http://localhost:3000/api/cr
 
 - India creators are an approximation: a video counts as "India" if it came from the region search or its channel's
   country field is IN. Channels with no country are not counted.
+- History: the first run (and the first run after adding a new category) does one 90-day search per category and
+  source (50 results, Shorts removed) and saves it in Neon (`history_videos`). Later runs reuse it. The history search
+  stops where the current 7-day window starts, so the two never overlap.
+- After each successful run, that run's 7-day videos are also saved to `history_videos`, so history keeps growing
+  and later weeks can be compared.
+- Labels are fixed rules in `lib/config.js` (checked in order): New (fewer than 2 related past videos), Returning
+  (related videos before, none in the last 4 weeks), Recurring (related videos in at least 4 of the last 12 weeks),
+  otherwise Growing. OpenAI only says which past videos are related; code counts and labels.
 - Public videos have no watch-time data, so "Watch quality" shows "Not available" and is not in the score.
 - Google OAuth setup and the refresh-token note will be added in Layer 3.

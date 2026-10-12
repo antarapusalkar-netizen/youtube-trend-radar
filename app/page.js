@@ -33,6 +33,7 @@ export default async function Page({ searchParams }) {
 
   const clusters = shown && shown.status === "ok" ? shown.clusters || [] : [];
   const indiaSorted = [...clusters].sort((a, b) => b.measures.indiaOpportunity - a.measures.indiaOpportunity);
+  const returning = clusters.filter((c) => c.label === "Recurring" || c.label === "Returning");
   const viewingOld = Boolean(briefParam);
 
   return (
@@ -132,6 +133,31 @@ export default async function Page({ searchParams }) {
             <p>{c.opportunityForIshaan}</p>
           </div>
         ))}
+      </section>
+
+      {/* 5. Recurring / Returning topics */}
+      <section>
+        <h2>Recurring / Returning Topics</h2>
+        {returning.length === 0 && <p className="empty">No recurring or returning topics in this brief.</p>}
+        {returning.map((c) => {
+          const biggest = Math.max(...c.weeklyCounts, 1);
+          return (
+            <div className="card" key={c.rank}>
+              <h3>
+                {c.trendName} <span className="label">{c.label}</span>
+              </h3>
+              <p className="note">Related videos per week, oldest to newest (last 12 weeks before this brief):</p>
+              <div className="weeks">
+                {c.weeklyCounts.map((n, i) => (
+                  <div key={i} className="week">
+                    <div className="bar" style={{ height: `${(n / biggest) * 40}px` }} />
+                    <span>{n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       {/* 6. Previous briefs */}

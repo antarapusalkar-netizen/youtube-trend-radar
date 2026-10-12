@@ -34,3 +34,11 @@ test("rejects empty fields, bad shape and more than 5 clusters", () => {
   const six = Array.from({ length: 6 }, () => cluster(["v1", "v2"]));
   assert.equal(validateClusters({ clusters: six }, known).ok, false);
 });
+
+test("relatedHistoryIds keeps only known history ids", () => {
+  const c = cluster(["v1", "v2"]);
+  c.relatedHistoryIds = ["h1", "h1", "unknown"];
+  const r = validateClusters({ clusters: [c, cluster(["v3", "v4"]), cluster(["v5", "v6"])] }, known, new Set(["h1"]));
+  assert.deepEqual(r.clusters[0].relatedHistoryIds, ["h1"]);
+  assert.deepEqual(r.clusters[1].relatedHistoryIds, []);
+});
