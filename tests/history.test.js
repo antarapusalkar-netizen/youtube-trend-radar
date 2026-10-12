@@ -39,3 +39,17 @@ test("Growing: everything else", () => {
   assert.equal(assignLabel(counts({ 10: 1, 11: 1 })), "Growing");
   assert.equal(assignLabel(counts({ 5: 1, 9: 2 })), "Growing"); // 2 weeks with videos, one inside the last 4 weeks
 });
+
+import { weekPieSlices } from "../lib/history.js";
+
+test("weekPieSlices: one slice per week with videos, oldest first, shares add to 100%", () => {
+  const counts = [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]; // oldest -> newest
+  const slices = weekPieSlices(counts);
+  assert.deepEqual(slices.map((s) => [s.weeksAgo, s.count]), [[11, 2], [2, 1], [1, 1]]);
+  assert.equal(slices[0].start, 0);
+  assert.equal(slices[slices.length - 1].end, 100);
+});
+
+test("weekPieSlices: no related videos gives no slices", () => {
+  assert.deepEqual(weekPieSlices(new Array(12).fill(0)), []);
+});

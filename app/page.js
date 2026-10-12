@@ -3,6 +3,7 @@ import Link from "next/link";
 import SettingsForm from "./SettingsForm";
 import GenerateButton from "./GenerateButton";
 import { getSettings, getBrief, getLatestBrief, listBriefs, getConnectionInfo } from "@/lib/db.js";
+import { weekPieSlices } from "@/lib/history.js";
 import { WEIGHTS, REGIONS, MIN_CATEGORIES, MAX_CATEGORIES, DEFAULT_CATEGORIES, DEFAULT_REGION } from "@/lib/config.js";
 import { friendlyMessage } from "@/lib/errors.js";
 import { triggerLabel, emailStatusText } from "@/lib/text.js";
@@ -250,28 +251,29 @@ export default async function Page({ searchParams }) {
           <h2 className="section">Recurring / Returning Topics</h2>
           {returning.length === 0 && <p className="empty">No recurring or returning topics in this brief.</p>}
           {returning.map((c) => {
-            const biggest = Math.max(...c.weeklyCounts, 1);
+            const slices = weekPieSlices(c.weeklyCounts);
+            const color = (weeksAgo) => `hsl(${(12 - weeksAgo) * 30} 65% 52%)`;
+            const gradient = slices.length
+              ? `conic-gradient(${slices.map((sl) => `${color(sl.weeksAgo)} ${sl.start}% ${sl.end}%`).join(", ")})`
+              : "#e5e7eb";
             return (
               <div className="card" key={c.rank}>
                 <div className="head">
                   <h3>{c.trendName}</h3>
                   <span className={`label ${c.label.toLowerCase()}`}>{c.label}</span>
                 </div>
-                <p className="note">Related videos per week, from 12 wks ago to last week:</p>
-                <div className="weeks">
-                  {c.weeklyCounts.map((n, i) => {
-                    const weeksAgo = c.weeklyCounts.length - i;
-                    return (
-                      <div key={i} className="week" title={`${weeksAgo} ${weeksAgo === 1 ? "week" : "weeks"} ago: ${n}`}>
-                        <div className="bar" style={{ height: `${(n / biggest) * 40}px` }} />
-                        <span>{n}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="week-axis">
-                  <span>{c.weeklyCounts.length} wks ago</span>
-                  <span>last week</span>
+                <p className="note">Related videos per week, from 12 wks ago to last week (each slice is one week):</p>
+                <div className="week-pie">
+                  <div className="pie big-pie" style={{ background: gradient }} role="img" aria-label="Related videos by week" />
+                  <ul className="week-legend">
+                    {slices.length === 0 && <li>No related videos in the last 12 weeks.</li>}
+                    {slices.map((sl) => (
+                      <li key={sl.weeksAgo}>
+                        <i style={{ background: color(sl.weeksAgo) }} />
+                        {sl.weeksAgo === 1 ? "last week" : `${sl.weeksAgo} wks ago`}: {sl.count} {sl.count === 1 ? "video" : "videos"}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             );

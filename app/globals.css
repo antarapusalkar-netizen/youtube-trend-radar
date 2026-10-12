@@ -99,3 +99,9 @@ summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
 @media (max-width: 720px) { .pie-box { align-self: flex-start; text-align: left; } .pie { margin: 0 0 6px; } }
 .week-axis { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+.week-pie { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.big-pie { width: 130px; height: 130px; margin: 0; flex: none; }
+.week-legend { list-style: none; margin: 0; padding: 0; font-size: 0.9rem; columns: 2; column-gap: 24px; }
+.week-legend li { margin-bottom: 4px; break-inside: avoid; }
+.week-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+@media (max-width: 720px) { .week-legend { columns: 1; } }
