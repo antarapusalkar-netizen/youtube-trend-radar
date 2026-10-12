@@ -38,6 +38,10 @@ test("videos left out of every cluster are fine (e.g. not about AI or tech)", ()
   assert.equal(r.clusters.flatMap((c) => c.videoIds).includes("v10"), false);
 });
 
+test("the prompt asks for up to 5 clusters", () => {
+  assert.match(CLUSTER_PROMPT, /up to 5 trend clusters \(never fewer than 3\)/);
+});
+
 test("the prompt tells OpenAI to leave out non-AI/tech videos and to use 3+ videos on one topic", () => {
   assert.match(CLUSTER_PROMPT, /at least 3 videos about the SAME specific topic/);
   assert.match(CLUSTER_PROMPT, /Leave out videos that are not about AI or tech/);
