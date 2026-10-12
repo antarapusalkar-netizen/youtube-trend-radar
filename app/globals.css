@@ -105,3 +105,9 @@ summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.
 .week-legend li { margin-bottom: 4px; break-inside: avoid; }
 .week-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
 @media (max-width: 720px) { .week-legend { columns: 1; } }
+.week-legend { columns: 1 !important; flex: 1; min-width: 260px; }
+.week-legend li { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+.week-legend .wk { width: 98px; flex: none; white-space: nowrap; }
+.wtrack { flex: 1; height: 10px; background: #f0f2f5; border-radius: 5px; overflow: hidden; }
+.wfill { display: block; height: 100%; border-radius: 5px; }
+.wn { width: 18px; text-align: right; font-weight: 600; }

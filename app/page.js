@@ -16,8 +16,8 @@ export const fetchCache = "force-no-store";
 
 // All times are shown in India time.
 const formatTime = (d) => new Date(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
-const num = (n) => Number(n).toLocaleString("en-US");
-const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
+const num = (n) => (n === undefined || n === null || Number.isNaN(Number(n)) ? "-" : Number(n).toLocaleString("en-US"));
+const mmss = (sec) => (sec === undefined || sec === null || Number.isNaN(Number(sec)) ? "-" : `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`);
 // Pie slices: India, other countries, unknown.
 const pieGradient = (m) => {
   const total = m.indiaCount + m.otherCount + m.unknownCount || 1;
@@ -25,6 +25,7 @@ const pieGradient = (m) => {
   const b = a + (m.otherCount / total) * 100;
   return `conic-gradient(#4f46e5 0 ${a}%, #f59e0b ${a}% ${b}%, #9ca3af ${b}% 100%)`;
 };
+const watched = (n, digits) => (n === undefined || n === null || Number.isNaN(Number(n)) ? "-" : `${Number(n).toFixed(digits)}%`);
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 
 export default async function Page({ searchParams }) {
@@ -220,7 +221,7 @@ export default async function Page({ searchParams }) {
                 <div><b>{num(own.totals.comments)}</b><span>comments</span></div>
                 <div><b>{num(own.totals.estimatedMinutesWatched)}</b><span>minutes watched</span></div>
                 <div><b>{mmss(own.totals.averageViewDuration)}</b><span>avg view duration</span></div>
-                <div><b>{Number(own.totals.averageViewPercentage).toFixed(1)}%</b><span>avg % watched</span></div>
+                <div><b>{watched(own.totals.averageViewPercentage, 1)}</b><span>avg % watched</span></div>
                 <div><b>{num(own.totals.subscribersGained)}</b><span>subscribers gained</span></div>
               </div>
               <div className="grid">
@@ -236,7 +237,7 @@ export default async function Page({ searchParams }) {
                     <li key={v.id}>
                       <a href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer">{v.title}</a>
                       <span className="note">
-                        {" "}· {num(v.views)} views · {num(v.likes)} likes · {num(v.comments)} comments · avg {mmss(v.averageViewDuration)} ({Number(v.averageViewPercentage).toFixed(0)}%)
+                        {" "}· {num(v.views)} views · {num(v.likes)} likes · {num(v.comments)} comments · avg {mmss(v.averageViewDuration)} ({watched(v.averageViewPercentage, 0)})
                       </span>
                     </li>
                   ))}
@@ -266,13 +267,20 @@ export default async function Page({ searchParams }) {
                 <div className="week-pie">
                   <div className="pie big-pie" style={{ background: gradient }} role="img" aria-label="Related videos by week" />
                   <ul className="week-legend">
-                    {slices.length === 0 && <li>No related videos in the last 12 weeks.</li>}
-                    {slices.map((sl) => (
-                      <li key={sl.weeksAgo}>
-                        <i style={{ background: color(sl.weeksAgo) }} />
-                        {sl.weeksAgo === 1 ? "last week" : `${sl.weeksAgo} wks ago`}: {sl.count} {sl.count === 1 ? "video" : "videos"}
-                      </li>
-                    ))}
+                    {c.weeklyCounts.map((n, i) => {
+                      const weeksAgo = c.weeklyCounts.length - i;
+                      const biggest = Math.max(...c.weeklyCounts, 1);
+                      return (
+                        <li key={i}>
+                          <span className="wk">
+                            <i style={{ background: n > 0 ? color(weeksAgo) : "#d0d5dd" }} />
+                            {weeksAgo === 1 ? "last week" : `${weeksAgo} wks ago`}
+                          </span>
+                          <span className="wtrack"><span className="wfill" style={{ width: `${(n / biggest) * 100}%`, background: color(weeksAgo) }} /></span>
+                          <span className="wn">{n}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>

@@ -38,6 +38,13 @@ test("videos left out of every cluster are fine (e.g. not about AI or tech)", ()
   assert.equal(r.clusters.flatMap((c) => c.videoIds).includes("v10"), false);
 });
 
+test("the prompt requires specific clusters with good and bad examples", () => {
+  assert.match(CLUSTER_PROMPT, /What specific thing are multiple creators talking about right now\?/);
+  assert.match(CLUSTER_PROMPT, /Good: "AI is changing software engineering roles"/);
+  assert.match(CLUSTER_PROMPT, /Bad: "How AI is changing jobs"/);
+  assert.match(CLUSTER_PROMPT, /Bad: "AI content"/);
+});
+
 test("the prompt asks for up to 5 clusters", () => {
   assert.match(CLUSTER_PROMPT, /up to 5 trend clusters \(never fewer than 3\)/);
 });
