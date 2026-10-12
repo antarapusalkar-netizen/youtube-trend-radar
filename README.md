@@ -123,6 +123,8 @@ rejects any request without it. It uses the same `runPipeline` as Generate Now a
   used as proof. This is an approximation. India opportunity = 1 - India videos / total videos in the cluster.
 - **Ranking:** done in code, never by OpenAI. Weights: momentum 30%, engagement 20%, creator breadth 15%,
   recurrence 15%, India opportunity 15%, views 5%. A measure that is unavailable is dropped and the rest re-scaled.
+- **Language:** every YouTube search sends `relevanceLanguage=en` (`SEARCH_LANGUAGE` in `lib/config.js`), so results lean
+  English. It is a hint, not a hard filter, so some non-English videos can still appear.
 - **Filtering before clustering:** Shorts are removed, then videos with fewer than 1,000 views (`MIN_VIEWS` in
   `lib/config.js`). The 7-day search asks for 30 results per search (`SEARCH_MAX_RESULTS`); a search costs the same 100
   quota units whatever the result count. A cluster needs at least 3 videos on one topic; if fewer than 3 clusters
