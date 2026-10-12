@@ -123,6 +123,10 @@ rejects any request without it. It uses the same `runPipeline` as Generate Now a
   used as proof. This is an approximation. India opportunity = 1 - India videos / total videos in the cluster.
 - **Ranking:** done in code, never by OpenAI. Weights: momentum 30%, engagement 20%, creator breadth 15%,
   recurrence 15%, India opportunity 15%, views 5%. A measure that is unavailable is dropped and the rest re-scaled.
+- **Filtering before clustering:** Shorts are removed, then videos with fewer than 1,000 views (`MIN_VIEWS` in
+  `lib/config.js`). The 7-day search asks for 30 results per search (`SEARCH_MAX_RESULTS`); a search costs the same 100
+  quota units whatever the result count. A cluster needs at least 3 videos on one topic; if fewer than 3 clusters
+  qualify, the run stops with a clear message instead of inventing clusters.
 - **Public videos have no watch-time data**, so "watch quality" is not available for them and is not in the score.
 - **History:** the first run (and the first run after adding a category) does one 90-day search per category and source
   (50 results, Shorts removed), stopping where the current 7-day window starts. Each later successful run also saves its
