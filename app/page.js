@@ -162,10 +162,20 @@ export default async function Page({ searchParams }) {
           {indiaSorted.map((c) => (
             <div className="card india" key={c.rank}>
               <div className="big">{pct(c.measures.indiaOpportunity)}<span>opportunity</span></div>
-              <div>
+              <div className="grow">
                 <h3>{c.trendName}</h3>
                 <p className="note">Global videos: {c.measures.globalCount} · India videos: {c.measures.indiaCount}</p>
                 <p>{c.opportunityForIshaan}</p>
+              </div>
+              <div className="pie-box">
+                <div
+                  className="pie"
+                  style={{ background: `conic-gradient(#4f46e5 0 ${(c.measures.indiaCount / (c.measures.indiaCount + c.measures.globalCount)) * 100}%, #f59e0b 0)` }}
+                  role="img"
+                  aria-label={`${c.measures.indiaCount} India videos, ${c.measures.globalCount} global videos`}
+                />
+                <p className="legend"><i style={{ background: "#4f46e5" }} />India {c.measures.indiaCount}</p>
+                <p className="legend"><i style={{ background: "#f59e0b" }} />Global {c.measures.globalCount}</p>
               </div>
             </div>
           ))}

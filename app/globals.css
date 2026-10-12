@@ -92,3 +92,9 @@ summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 0.
   .india { flex-direction: column; gap: 8px; }
 }
 .split h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 16px 0 6px; }
+.india .grow { flex: 1; }
+.pie-box { text-align: center; min-width: 96px; }
+.pie { width: 84px; height: 84px; border-radius: 50%; margin: 0 auto 6px; }
+.legend { margin: 0; font-size: 0.78rem; color: var(--muted); }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+@media (max-width: 720px) { .pie-box { align-self: flex-start; text-align: left; } .pie { margin: 0 0 6px; } }
