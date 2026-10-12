@@ -4,7 +4,7 @@ A weekly content strategy brief for Ishaan, a tech YouTube creator. It reads liv
 asks OpenAI to group videos into 3-5 trend clusters, ranks them in code, saves the brief in Neon, shows it on one
 dashboard page and emails it with Resend.
 
-**Status: Layers 1 and 2 (core + 90-day history).** Layer 3 (own channel analytics) comes next.
+**Status: all 3 layers (core, 90-day history, own channel analytics).**
 
 ## Files (one line each)
 
@@ -22,6 +22,11 @@ dashboard page and emails it with Resend.
 | `lib/process.js` | Pure functions: duration, Shorts removal, views per hour, India flag |
 | `lib/ranking.js` | Pure functions: cluster numbers, 0-1 scaling, weighted score |
 | `lib/history.js` | Pure functions: weekly counts and the New / Returning / Recurring / Growing label |
+| `lib/google.js` | Google OAuth: sign-in URL, code and refresh-token exchange, own channel lookup |
+| `lib/ownchannel.js` | Fetches "Your Last 7 Days" from YouTube Analytics and asks OpenAI to explain it |
+| `lib/ownstats.js` | Pure functions: analytics date range, row parsing, "enough data" check |
+| `app/api/auth/google/route.js` | Starts Google sign-in (Connect YouTube Channel) |
+| `app/api/auth/google/callback/route.js` | Finishes sign-in and saves the channel and refresh token (server only) |
 | `lib/validate.js` | Pure function: checks the OpenAI answer |
 | `lib/openai.js` | The prompt and the OpenAI call (with one retry) |
 | `lib/db.js` | Neon: creates tables, saves settings and briefs |
@@ -78,4 +83,24 @@ curl -i -H "Authorization: Bearer YOUR_CRON_SECRET" http://localhost:3000/api/cr
   (related videos before, none in the last 4 weeks), Recurring (related videos in at least 4 of the last 12 weeks),
   otherwise Growing. OpenAI only says which past videos are related; code counts and labels.
 - Public videos have no watch-time data, so "Watch quality" shows "Not available" and is not in the score.
-- Google OAuth setup and the refresh-token note will be added in Layer 3.
+
+## Google OAuth setup (for Connect YouTube Channel)
+
+1. Go to https://console.cloud.google.com and use the same project as your YouTube API key.
+2. APIs & Services -> Library: enable **YouTube Data API v3** and **YouTube Analytics API**.
+3. APIs & Services -> OAuth consent screen: User type External, publishing status **Testing**.
+   Under Test users, add your own Google account (the one that owns the YouTube channel).
+4. Credentials -> Create credentials -> OAuth client ID -> Web application.
+   Add Authorized redirect URIs: `http://localhost:3000/api/auth/google/callback` and, after deploying,
+   `https://YOUR-APP.vercel.app/api/auth/google/callback`. The redirect URI is always `APP_URL` + `/api/auth/google/callback`.
+5. Put the client id and secret in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+6. Open the dashboard and click **Connect YouTube Channel**. Google shows a "not verified" warning in Testing mode: continue.
+
+Only read-only scopes are requested (`youtube.readonly`, `yt-analytics.readonly`). Only one channel is stored
+(connecting again replaces it). Tokens stay on the server.
+
+**Important:** while the Google app is in Testing mode, the refresh token expires after about 7 days. If
+"Your Last 7 Days" shows that the connection expired, click Connect YouTube Channel again. Do this before any demo.
+
+Your Last 7 Days uses data ending 2 days ago (Analytics lags). It needs at least 3 videos with views, otherwise it shows
+"Not enough data".

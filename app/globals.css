@@ -30,3 +30,5 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .weeks { display: flex; gap: 4px; align-items: flex-end; }
 .week { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; min-width: 22px; }
 .bar { width: 14px; background: #0b5cd5; border-radius: 3px 3px 0 0; min-height: 2px; }
+a.button { display: inline-block; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.95rem; }
+a.button.secondary { background: #e8edf2; color: #1d2733; }

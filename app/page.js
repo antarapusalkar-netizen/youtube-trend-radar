@@ -2,7 +2,7 @@
 import Link from "next/link";
 import SettingsForm from "./SettingsForm";
 import GenerateButton from "./GenerateButton";
-import { getSettings, getBrief, getLatestBrief, listBriefs } from "@/lib/db.js";
+import { getSettings, getBrief, getLatestBrief, listBriefs, getConnectionInfo } from "@/lib/db.js";
 import { REGIONS, MIN_CATEGORIES, MAX_CATEGORIES, DEFAULT_CATEGORIES, DEFAULT_REGION } from "@/lib/config.js";
 import { friendlyMessage } from "@/lib/errors.js";
 
@@ -11,21 +11,24 @@ export const dynamic = "force-dynamic";
 // All times are shown in India time.
 const formatTime = (d) => new Date(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" });
 const num = (n) => Number(n).toLocaleString("en-IN");
+const mmss = (sec) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
 const pct = (n) => `${(n * 100).toFixed(1)}%`;
 
 export default async function Page({ searchParams }) {
-  const { brief: briefParam } = await searchParams;
+  const { brief: briefParam, connected, connect_error: connectError } = await searchParams;
 
   let settings = { region: DEFAULT_REGION, categories: DEFAULT_CATEGORIES };
   let latest = null; // newest run of any status
   let shown = null; // the brief we display
   let past = [];
+  let connection = null;
   let loadError = null;
 
   try {
     settings = await getSettings();
     latest = await getLatestBrief(false);
     past = await listBriefs();
+    connection = await getConnectionInfo();
     shown = briefParam ? await getBrief(Number(briefParam) || 0) : await getLatestBrief(true);
   } catch (err) {
     loadError = friendlyMessage(err);
@@ -34,6 +37,7 @@ export default async function Page({ searchParams }) {
   const clusters = shown && shown.status === "ok" ? shown.clusters || [] : [];
   const indiaSorted = [...clusters].sort((a, b) => b.measures.indiaOpportunity - a.measures.indiaOpportunity);
   const returning = clusters.filter((c) => c.label === "Recurring" || c.label === "Returning");
+  const own = shown && shown.status === "ok" ? shown.own_channel : null;
   const viewingOld = Boolean(briefParam);
 
   return (
@@ -55,6 +59,18 @@ export default async function Page({ searchParams }) {
         <hr />
         <p className="note">Settings are used when a brief is generated, so save them first.</p>
         <GenerateButton />
+        <hr />
+        <h3>Your YouTube channel</h3>
+        {connected && <p className="note">Connected. Your next brief will include your channel.</p>}
+        {connectError && <div className="error">{connectError}</div>}
+        <div className="row">
+          <a className="button secondary" href="/api/auth/google">
+            {connection ? "Reconnect YouTube Channel" : "Connect YouTube Channel"}
+          </a>
+          <span className="note">
+            {connection ? `Connected: ${connection.channel_title}` : "Not connected. Read-only access to your channel and analytics."}
+          </span>
+        </div>
       </section>
 
       {/* Latest run failed: show the error above the last good brief */}
@@ -133,6 +149,47 @@ export default async function Page({ searchParams }) {
             <p>{c.opportunityForIshaan}</p>
           </div>
         ))}
+      </section>
+
+      {/* 4. Your last 7 days */}
+      <section>
+        <h2>Your Last 7 Days</h2>
+        {(!own || own.status === "not_connected") && (
+          <p className="empty">Your channel is not connected. Use the Connect YouTube Channel button at the top, then generate a new brief.</p>
+        )}
+        {own && own.status === "not_enough_data" && <p className="empty">Not enough data yet (fewer than 3 videos had views in the last 7 days).</p>}
+        {own && own.status === "error" && <div className="error">{own.message}</div>}
+        {own && own.status === "ok" && (
+          <div className="card">
+            <p className="note">
+              {own.channelTitle} · {own.range.startDate} to {own.range.endDate} (YouTube Analytics data is about 2 days behind)
+            </p>
+            <div className="numbers">
+              <span>Views: {num(own.totals.views)}</span>
+              <span>Likes: {num(own.totals.likes)}</span>
+              <span>Comments: {num(own.totals.comments)}</span>
+              <span>Minutes watched: {num(own.totals.estimatedMinutesWatched)}</span>
+              <span>Avg view duration: {mmss(own.totals.averageViewDuration)}</span>
+              <span>Avg % watched: {Number(own.totals.averageViewPercentage).toFixed(1)}%</span>
+              <span>Subscribers gained: {num(own.totals.subscribersGained)}</span>
+            </div>
+            <p><b>What worked:</b> {own.insights.whatWorked}</p>
+            <p><b>What did not work:</b> {own.insights.whatDidNotWork}</p>
+            <p><b>What to repeat:</b> {own.insights.whatToRepeat}</p>
+            <p><b>What to change:</b> {own.insights.whatToChange}</p>
+            <h3>Top videos</h3>
+            <ul className="videos">
+              {own.videos.map((v) => (
+                <li key={v.id}>
+                  <a href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noreferrer">{v.title}</a>
+                  <span className="note">
+                    {" "}· {num(v.views)} views · {num(v.likes)} likes · {num(v.comments)} comments · {num(v.estimatedMinutesWatched)} min watched · avg {mmss(v.averageViewDuration)} ({Number(v.averageViewPercentage).toFixed(0)}%)
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       {/* 5. Recurring / Returning topics */}
