@@ -1,9 +1,9 @@
 "use client";
-// Tabs for the one dashboard page. All panels stay on the page (hidden or shown),
-// so switching tabs never reloads the page or fetches data again.
+// The frame: sticky blurred header (top bar + pill tabs) and the tab panels.
+// All panels stay on the page (hidden or shown), so switching tabs never reloads or fetches data.
 import { useState, useRef } from "react";
 
-export default function Tabs({ header, banners, tabs, initial }) {
+export default function Tabs({ top, banners, tabs, initial }) {
   const [active, setActive] = useState(initial || tabs[0].id);
   const buttons = useRef({});
 
@@ -20,42 +20,46 @@ export default function Tabs({ header, banners, tabs, initial }) {
     if (buttons.current[tabs[next].id]) buttons.current[tabs[next].id].focus();
   }
 
+  // Any element with data-goto="tabId" (for example "Go to Settings") switches to that tab.
+  function onMainClick(e) {
+    const target = e.target.closest ? e.target.closest("[data-goto]") : null;
+    if (target) setActive(target.getAttribute("data-goto"));
+  }
+
   return (
-    <>
-      <div className="sticky-top">
-        {header}
-        <div className="tabbar">
-          <div className="wrap">
-            <div role="tablist" aria-label="Dashboard sections" className="tablist">
-              {tabs.map((t, i) => (
-                <button
-                  key={t.id}
-                  id={`tab-${t.id}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={active === t.id}
-                  aria-controls={`panel-${t.id}`}
-                  tabIndex={active === t.id ? 0 : -1}
-                  className={`tab${active === t.id ? " active" : ""}`}
-                  onClick={() => setActive(t.id)}
-                  onKeyDown={(e) => onKeyDown(e, i)}
-                  ref={(el) => (buttons.current[t.id] = el)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
+    <div className="frame">
+      <header className="hdr">
+        <div className="hdr-in">
+          {top}
+          <nav role="tablist" aria-label="Dashboard sections" className="tray">
+            {tabs.map((t, i) => (
+              <button
+                key={t.id}
+                id={`tab-${t.id}`}
+                type="button"
+                role="tab"
+                aria-selected={active === t.id}
+                aria-controls={`panel-${t.id}`}
+                tabIndex={active === t.id ? 0 : -1}
+                className="tab"
+                onClick={() => setActive(t.id)}
+                onKeyDown={(e) => onKeyDown(e, i)}
+                ref={(el) => (buttons.current[t.id] = el)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
         </div>
-      </div>
-      <main className="wrap">
+      </header>
+      <main className="main" onClick={onMainClick}>
         {banners}
         {tabs.map((t) => (
-          <div key={t.id} id={`panel-${t.id}`} role="tabpanel" aria-labelledby={`tab-${t.id}`} hidden={active !== t.id} className="panel">
+          <section key={t.id} id={`panel-${t.id}`} role="tabpanel" aria-labelledby={`tab-${t.id}`} hidden={active !== t.id} className="panel">
             {t.content}
-          </div>
+          </section>
         ))}
       </main>
-    </>
+    </div>
   );
 }

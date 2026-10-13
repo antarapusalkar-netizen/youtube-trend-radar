@@ -10,8 +10,14 @@ export default function SettingsForm({ initialCategories, initialRegion, regions
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const edit = (i, value) => setCategories(categories.map((c, j) => (j === i ? value : c)));
-  const remove = (i) => setCategories(categories.filter((_, j) => j !== i));
+  const edit = (i, value) => {
+    setCategories(categories.map((c, j) => (j === i ? value : c)));
+    setMessage("");
+  };
+  const remove = (i) => {
+    setCategories(categories.filter((_, j) => j !== i));
+    setMessage("");
+  };
 
   async function save() {
     setSaving(true);
@@ -32,35 +38,45 @@ export default function SettingsForm({ initialCategories, initialRegion, regions
   }
 
   return (
-    <div>
-      <h3>Categories ({min}-{max})</h3>
-      {categories.map((c, i) => (
-        <div className="row" key={i}>
-          <input value={c} onChange={(e) => edit(i, e.target.value)} aria-label={`Category ${i + 1}`} />
-          <button className="secondary" onClick={() => remove(i)} disabled={categories.length <= min}>
-            Remove
-          </button>
+    <article className="card tight">
+      <div>
+        <div className="field-title">Categories</div>
+        <div className="fine">
+          {min} to {max} categories · {categories.length} in use
         </div>
-      ))}
-      <button className="secondary" onClick={() => setCategories([...categories, ""])} disabled={categories.length >= max}>
+      </div>
+      <div className="cat-rows">
+        {categories.map((c, i) => (
+          <div className="cat-row" key={i}>
+            <input className="input" value={c} onChange={(e) => edit(i, e.target.value)} aria-label={`Category ${i + 1}`} />
+            <button type="button" className="textbtn" onClick={() => remove(i)} disabled={categories.length <= min}>
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+      <button type="button" className="addbtn" onClick={() => setCategories([...categories, ""])} disabled={categories.length >= max}>
         Add category
       </button>
 
-      <h3>Market / region</h3>
-      <select value={region} onChange={(e) => setRegion(e.target.value)}>
-        {regions.map((r) => (
-          <option key={r.code} value={r.code}>
-            {r.name} ({r.code})
-          </option>
-        ))}
-      </select>
+      <label className="region">
+        <span>Market / region</span>
+        <select className="input" value={region} onChange={(e) => setRegion(e.target.value)}>
+          {regions.map((r) => (
+            <option key={r.code} value={r.code}>
+              {r.name} ({r.code})
+            </option>
+          ))}
+        </select>
+      </label>
 
-      <div className="row">
-        <button onClick={save} disabled={saving}>
+      <div className="save-row">
+        <button type="button" className="pill" onClick={save} disabled={saving}>
           {saving ? "Saving..." : "Save settings"}
         </button>
-        {message && <span className="note">{message}</span>}
+        {message && <span role="status">{message}</span>}
       </div>
-    </div>
+      <div className="fine">Save your settings first, then press Generate Now to make a fresh brief from live YouTube data.</div>
+    </article>
   );
 }
